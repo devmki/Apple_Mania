@@ -9,6 +9,7 @@ FPS = 60
 
 #colors
 WHITE = (255, 255, 255)
+BLACK = (0,0,0)
 
 #max apples in trees
 MAX_APPLES = 5

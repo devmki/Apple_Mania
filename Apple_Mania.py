@@ -1,4 +1,5 @@
 #import librarys
+from distutils.errors import DistutilsOptionError
 import pygame
 from pygame.locals import *
 import sys
@@ -45,6 +46,9 @@ FONT = pygame.font.Font('freesansbold.ttf', 32)
 #shake or inflate?
 SHAKE = False
 
+#sprite sheet for smashed apple
+smashed_image_sheet = pygame.image.load("2DArt/Smashed_apple_sprite_sheet.png").convert_alpha()
+
 #player class
 class Player(pygame.sprite.Sprite):
     def __init__(self):
@@ -65,7 +69,14 @@ class Apple(pygame.sprite.Sprite):
         self.text = FONT.render(str(self.number),True,settings.WHITE)
         self.rect_new = None
         self.image_new = None
-        self.smashed_image = pygame
+        self.smashed_sheet = sp_load.Sprite_Sheet_loader(smashed_image_sheet)
+
+        self.smash_1 = self.smashed_sheet.get_image(0,32,32,settings.BLACK)
+        self.smash_2 = self.smashed_sheet.get_image(1,32,32,settings.BLACK)
+        self.smash_3 = self.smashed_sheet.get_image(2,32,32,settings.BLACK)
+        self.smash_4 = self.smashed_sheet.get_image(3,32,32,settings.BLACK)
+
+        self.smashed_list = [self.smash_1, self.smash_2, self.smash_3, self.smash_4]
 
 
     def draw(self,surface):
@@ -88,6 +99,12 @@ class Apple(pygame.sprite.Sprite):
 
     def get_rect_yval(self):
         return self.rect.centery
+
+    def get_rect_xval(self):
+        return self.rect.centerx
+
+    def get_smashed_list(self):
+        return self.smashed_list
    
 
 def main():
@@ -101,6 +118,7 @@ def main():
     timer = 0
     infinite = -1
     start = 0.0
+    smash_animation_counter = 0
     pygame.mixer.music.play(infinite, start)
     #game loop
     while run:
@@ -166,7 +184,9 @@ def main():
         if(apples_list[index_of_apple].dropping):
             #get current y value of the apple
             elevation = apples_list[index_of_apple].get_rect_yval()
+            xvalue = apples_list[index_of_apple].get_rect_xval()
             if elevation < max_y_dropping_apple:
+                smash_animation_counter = 0
                 if(timer % settings.TIME_MODULO == 0):
                     if(timer % (6*settings.TIME_MODULO) == 0):
                         DROPPING_SOUND.play()
@@ -177,16 +197,24 @@ def main():
                     #display the apples
                     apple_group.draw(DISPLAYSURFACE)
                     #draw dropping aplle
-                    apples_list[index_of_apple].draw(DISPLAYSURFACE)
+                    if(elevation < max_y_dropping_apple):
+                        apples_list[index_of_apple].draw(DISPLAYSURFACE)
                     #update the display
                     pygame.display.update()
                     timer += 1
                 else:
                     timer += 1
             else:
-                apples_list.pop(index_of_apple)
-                BURST_SOUND.play()
-                time.sleep(0.5)
+                if(smash_animation_counter < len(apples_list[index_of_apple].get_smashed_list())-1):
+                    DISPLAYSURFACE.blit(apples_list[index_of_apple].get_smashed_list()[smash_animation_counter],
+                                        (xvalue-16, elevation-16))
+                    smash_animation_counter += 1
+                    pygame.display.update()
+                    time.sleep(0.1)
+                else:    
+                    apples_list.pop(index_of_apple)
+                    BURST_SOUND.play()
+                    time.sleep(0.5)
 
         #get all events that are happening
         for event in pygame.event.get():
