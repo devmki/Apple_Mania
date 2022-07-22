@@ -1,6 +1,7 @@
 #import librarys
 from copyreg import dispatch_table
 from distutils.errors import DistutilsOptionError
+from doctest import ELLIPSIS_MARKER
 import pygame
 import pygame.locals
 import sys
@@ -63,8 +64,16 @@ class Player(pygame.sprite.Sprite):
 
         self.idle_image_1 = self.player_sheet.get_image(0,32,32,4,settings.BLACK)
         self.idle_image_2 = self.player_sheet.get_image(1,32,32,4,settings.BLACK)
+        self.idle_full_image_1 = self.player_sheet.get_image(2,32,32,4,settings.BLACK)
+        self.idle_full_image_2 = self.player_sheet.get_image(3,32,32,4,settings.BLACK)
+        self.catch_empty_image = self.player_sheet.get_image(4,32,32,4,settings.BLACK)
+        self.catch_full_image = self.player_sheet.get_image(5,32,32,4,settings.BLACK)
 
-        self.player_sprite_list = [self.idle_image_1, self.idle_image_2]
+        self.player_sprite_list = [self.idle_image_1, self.idle_image_2, 
+                                   self.idle_full_image_1, self.idle_full_image_2,
+                                   self.catch_empty_image, self.catch_full_image]
+
+        self.bucket_full = False
 
     def get_sprite_list(self):
         return self.player_sprite_list
@@ -74,7 +83,15 @@ class Player(pygame.sprite.Sprite):
     
     def get_position(self):
         return self.rect.center
- 
+
+    def set_bucket_full(self):
+        self.bucket_full = True
+    
+    def set_bucket_empty(self):
+        self.bucket_full = False
+
+    def get_bucket_state(self):
+        return self.bucket_full
 #class apple
 class Apple(pygame.sprite.Sprite):
     def __init__(self, id):
@@ -277,11 +294,17 @@ def main():
 
         #blit the player
         position = player_1.get_position()
-        if(current_time - last_update_player > settings.ANIMATION_PLAYER_COOLDOWN):              
-            if(idle_index == 0):
-                idle_index = 1
+        if(current_time - last_update_player > settings.ANIMATION_PLAYER_COOLDOWN):
+            if(not player_1.get_bucket_state()):          
+                if(idle_index == 0):
+                    idle_index = 1
+                elif(idle_index == 1):
+                    idle_index = 0
             else:
-                idle_index = 0
+                if(idle_index == 3):
+                    idle_index = 2
+                elif(idle_index == 2):
+                    idle_index = 3
         DISPLAYSURFACE.blit(player_1.get_sprite_list()[idle_index],(position[0],position[1]))
 
         #get all events that are happening
@@ -298,14 +321,39 @@ def main():
                 if(keys[pygame.K_d]):
                     #right x limit
                     if(position[0] < settings.X_LIMIT_RIGHT):
-                        player_1.move(settings.SPEED, 0)                 
+                        player_1.move(settings.SPEED, 0)   
+                        if(player_1.get_bucket_state()):
+                            idle_index = 2 
+                        else:
+                            idle_index = 0             
                         DISPLAYSURFACE.blit(player_1.get_sprite_list()[idle_index],(position[0],position[1]))
                 #move player left
                 elif(keys[pygame.K_a]):
                     #left x limit
                     if(position[0] > settings.X_LIMIT_LEFT):
                         player_1.move(-1*settings.SPEED,0)
+                        if(player_1.get_bucket_state()):
+                            idle_index = 2 
+                        else:
+                            idle_index = 0
                         DISPLAYSURFACE.blit(player_1.get_sprite_list()[idle_index],(position[0],position[1]))
+                #try to catch the apple
+                elif(keys[pygame.K_w]):
+                    if(not player_1.get_bucket_state()):
+                        colliding = pygame.sprite.collide_circle_ratio(settings.COLLISION_RATIO)(chosen_apple, player_1)
+                        if(colliding):
+                            player_1.set_bucket_full()
+                            apples_list.pop(index_of_apple)
+                            idle_index = 5
+                            DISPLAYSURFACE.blit(player_1.get_sprite_list()[idle_index],(position[0],position[1]))
+                        else:
+                            idle_index = 4
+                            DISPLAYSURFACE.blit(player_1.get_sprite_list()[idle_index],(position[0],position[1]))
+                #empty bucket
+                elif(keys[pygame.K_s]):
+                    if(player_1.get_bucket_state()):
+                        player_1.set_bucket_empty()
+                        idle_index = 0
 
 
         #update the varying timers if necessary

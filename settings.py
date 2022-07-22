@@ -7,6 +7,9 @@ HEIGHT = 300
 #frames per second
 FPS = 60
 
+#collision ratio
+COLLISION_RATIO = 0.45
+
 #colors
 WHITE = (255, 255, 255)
 BLACK = (0,0,0)
