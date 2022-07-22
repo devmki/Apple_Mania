@@ -1,7 +1,8 @@
 #import librarys
+from copyreg import dispatch_table
 from distutils.errors import DistutilsOptionError
 import pygame
-from pygame.locals import *
+import pygame.locals
 import sys
 import random
 import time
@@ -22,10 +23,10 @@ pygame.mixer.music.set_volume(0.1)
 
 #sound effects
 LEAVES_SOUND = pygame.mixer.Sound("Music_and_Sounds/leaves.wav")
-LEAVES_SOUND.set_volume(1.0)
+LEAVES_SOUND.set_volume(2.0)
 
 DROPPING_SOUND = pygame.mixer.Sound("Music_and_Sounds/synth_beep_02.ogg")
-DROPPING_SOUND.set_volume(0.1)
+DROPPING_SOUND.set_volume(0.0)
 
 BURST_SOUND = pygame.mixer.Sound("Music_and_Sounds/retro_misc_01.ogg")
 BURST_SOUND.set_volume(0.1)
@@ -54,8 +55,26 @@ class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
         self.lives = 3
-        self.image = pygame.image.load("2DArt/Player.png")
+        self.image = pygame.image.load("2DArt/Player.png").convert_alpha()
+        self.rect = self.image.get_rect()
+        self.rect.center = (settings.PLAYER_START_X, settings.PLAYER_START_Y)
 
+        self.player_sheet = sp_load.Sprite_Sheet_loader(self.image)
+
+        self.idle_image_1 = self.player_sheet.get_image(0,32,32,4,settings.BLACK)
+        self.idle_image_2 = self.player_sheet.get_image(1,32,32,4,settings.BLACK)
+
+        self.player_sprite_list = [self.idle_image_1, self.idle_image_2]
+
+    def get_sprite_list(self):
+        return self.player_sprite_list
+
+    def move(self,x,y):
+        self.rect.move_ip(x,y)
+    
+    def get_position(self):
+        return self.rect.center
+ 
 #class apple
 class Apple(pygame.sprite.Sprite):
     def __init__(self, id):
@@ -71,10 +90,10 @@ class Apple(pygame.sprite.Sprite):
         self.image_new = None
         self.smashed_sheet = sp_load.Sprite_Sheet_loader(smashed_image_sheet)
 
-        self.smash_1 = self.smashed_sheet.get_image(0,32,32,settings.BLACK)
-        self.smash_2 = self.smashed_sheet.get_image(1,32,32,settings.BLACK)
-        self.smash_3 = self.smashed_sheet.get_image(2,32,32,settings.BLACK)
-        self.smash_4 = self.smashed_sheet.get_image(3,32,32,settings.BLACK)
+        self.smash_1 = self.smashed_sheet.get_image(0,32,32,1,settings.BLACK)
+        self.smash_2 = self.smashed_sheet.get_image(1,32,32,1,settings.BLACK)
+        self.smash_3 = self.smashed_sheet.get_image(2,32,32,1,settings.BLACK)
+        self.smash_4 = self.smashed_sheet.get_image(3,32,32,1,settings.BLACK)
 
         self.smashed_list = [self.smash_1, self.smash_2, self.smash_3, self.smash_4]
 
@@ -105,25 +124,61 @@ class Apple(pygame.sprite.Sprite):
 
     def get_smashed_list(self):
         return self.smashed_list
-   
+
+player_1 = Player()  
 
 def main():
+    #when was the last update of the grow and shrink animation
+    last_update_blink = pygame.time.get_ticks()
+    #when was the last update of the drop animation
+    last_update_drop = pygame.time.get_ticks()
+    #when was the last update of the smash animation
+    last_update_smash = pygame.time.get_ticks()
+    #when was the last update of the player animation
+    last_update_player = pygame.time.get_ticks()
+    #channel of the dropping sound
+    #used to determine when to play the sound gain
+    channel = DROPPING_SOUND.play()
+    #keep time and set to fps
     clock = pygame.time.Clock()
+    #continue running the game?
     run = True
-    apples_list = []
-    chosen_apple = None
+    #number of spawned apple
     i = 0
+    #list of the spawned apples
+    apples_list = []
+    #apple selected to be dropped
+    chosen_apple = None
+    #index of the chosen apple in apples_lsit
     index_of_apple = -1
+    #group of apples for easier drawing
     apple_group = None
-    timer = 0
+    #number of blinks (grow and shrink) to indicate will be dropped
+    blink_count = 0
+    #used for smash animation when apples hits the ground
+    time_smash = 0
+    #used to determine when to play sound of rustling leaves
+    sound_shake_or_grow = 0
+    #used to set play backround music infinitly
     infinite = -1
+    #when to start music
     start = 0.0
-    smash_animation_counter = 0
+    #index to toggle which grow and shrink animation is used
+    grow_index = 0
+    #index to toggle which smash animation is used
+    smash_index = 0
+    #index to toggle which idle animation is used for the player
+    idle_index = 0
     pygame.mixer.music.play(infinite, start)
     #game loop
     while run:
         #limit to 60 FPS
         clock.tick(settings.FPS)
+
+        current_time = pygame.time.get_ticks()
+
+        #background
+        DISPLAYSURFACE.blit(BACKGROUND,(0,0))
 
         #if less than 5 apples then add more applesS
         while len(apples_list) <= settings.MAX_APPLES-1:
@@ -144,84 +199,130 @@ def main():
             apple_group = pygame.sprite.Group(apples_list)
 
         #select an apple that will drop, if no other apple is currently dropping
-        if(not any([apple_dropping for apple_dropping in apples_list if apple_dropping.dropping == True])):
+        if(not any([apple_dropping for apple_dropping in apples_list if apple_dropping.dropping == True]) and
+            len(apple_group) == 5):
             chosen_apple = random.choice(apples_list)
-            max_y_dropping_apple = settings.MAX_Y_DROP + random.randint(0,10)
+            #maximum y value to which the apple will fall
+            max_y_dropping_apple = settings.MAX_Y_DROP + random.randint(-20,20)
+            #mark that apple as will be dropping
+            index_of_apple = apples_list.index(chosen_apple)
+            #remove chosen apple from apple_group
+            apple_group.remove(apples_list[index_of_apple])
 
-        #mark that apple as will be dropping
-        index_of_apple = apples_list.index(chosen_apple)
-        #remove chosen apple from apple_group
-        apple_group.remove(apples_list[index_of_apple])
+        #display the apples
+        apple_group.draw(DISPLAYSURFACE)
 
+        #currently no aplle is dropping, so indicate which one will
         if(not apples_list[index_of_apple].dropping):
-            LEAVES_SOUND.play()
-            for i in range(settings.BLINKS):
-                #background
-                DISPLAYSURFACE.blit(BACKGROUND,(0,0))
-                #display the apples
-                apple_group.draw(DISPLAYSURFACE)
-                #shake or inflate direction
-                index = 0
-                if(i%2 == 0):
-                    index = 0
+            if(current_time - last_update_blink > settings.ANIMATION_BLINK_COOLDOWN):
+                blink_count += 1
+                #shake or grow and shrink direction
+                if(grow_index == len(settings.margin_list) -1):
+                    grow_index = 0
                 else:
-                    index = 1
+                    grow_index += 1
                 if(SHAKE):
                     #shake apple
-                    apples_list[index_of_apple].shake(DISPLAYSURFACE,settings.margin_list[index])
+                    apples_list[index_of_apple].shake(DISPLAYSURFACE,settings.margin_list[grow_index])
+                    if(sound_shake_or_grow == 0):
+                        LEAVES_SOUND.play()
+                    sound_shake_or_grow += 1
                 else:
                     #grow and shrink apple
-                    apples_list[index_of_apple].grow_and_shrink(DISPLAYSURFACE,settings.margin_list[index])
-                #update the display
-                pygame.display.update()
-                time.sleep(0.1)
-            LEAVES_SOUND.stop()
-
-        #chosen apple will drop or is dropping
-        apples_list[index_of_apple].dropping = True
+                    apples_list[index_of_apple].grow_and_shrink(DISPLAYSURFACE,settings.margin_list[grow_index])
+                    if(sound_shake_or_grow == 0):
+                        LEAVES_SOUND.play()
+                    sound_shake_or_grow += 1
+            elif(blink_count > settings.BLINKS):
+                blink_count = 0
+                sound_shake_or_grow = 0
+                #chosen apple will is marked to start dropping
+                apples_list[index_of_apple].dropping = True
+                LEAVES_SOUND.stop()
+            else:
+                apples_list[index_of_apple].draw(DISPLAYSURFACE)
 
         #if the chosen apple is dropping
         if(apples_list[index_of_apple].dropping):
-            #get current y value of the apple
+            #get current y and x value of the apple
             elevation = apples_list[index_of_apple].get_rect_yval()
             xvalue = apples_list[index_of_apple].get_rect_xval()
             if elevation < max_y_dropping_apple:
-                smash_animation_counter = 0
-                if(timer % settings.TIME_MODULO == 0):
-                    if(timer % (6*settings.TIME_MODULO) == 0):
+                smash_index = 0    
+                if(current_time - last_update_drop > settings.ANIMATION_DROP_COOLDOWN):
+                    #is the dropping sound not playing? -> then play it
+                    if(not channel.get_busy()):
+                        DROPPING_SOUND.set_volume(0.1)
                         DROPPING_SOUND.play()
+                    #drop the apple by specified amount
                     apples_list[index_of_apple].move(0,settings.DIFF_MARGIN)
+                    #update the elevation of the apple
                     elevation = apples_list[index_of_apple].get_rect_yval()
-                    #background
-                    DISPLAYSURFACE.blit(BACKGROUND,(0,0))
-                    #display the apples
-                    apple_group.draw(DISPLAYSURFACE)
-                    #draw dropping aplle
-                    if(elevation < max_y_dropping_apple):
-                        apples_list[index_of_apple].draw(DISPLAYSURFACE)
-                    #update the display
-                    pygame.display.update()
-                    timer += 1
-                else:
-                    timer += 1
+                apples_list[index_of_apple].draw(DISPLAYSURFACE)
             else:
-                if(smash_animation_counter < len(apples_list[index_of_apple].get_smashed_list())-1):
-                    DISPLAYSURFACE.blit(apples_list[index_of_apple].get_smashed_list()[smash_animation_counter],
-                                        (xvalue-16, elevation-16))
-                    smash_animation_counter += 1
-                    pygame.display.update()
-                    time.sleep(0.1)
-                else:    
-                    apples_list.pop(index_of_apple)
-                    BURST_SOUND.play()
-                    time.sleep(0.5)
+                #apple is hitting the ground, time for the smash animation
+                DISPLAYSURFACE.blit(apples_list[index_of_apple].get_smashed_list()[smash_index],
+                    (xvalue-16, elevation-16))   
+                if(current_time - last_update_smash > settings.ANIMATION_SMASH_COOLDOWN):
+                    time_smash += 1
+                    if(time_smash == 1):
+                        BURST_SOUND.play()
+                    if(smash_index < len(apples_list[index_of_apple].get_smashed_list())-1):
+                        if(time_smash % 3 == 0):
+                            smash_index += 1
+                    else:    
+                        apples_list.pop(index_of_apple)
+                        time_smash = 0
+
+
+        #blit the player
+        position = player_1.get_position()
+        if(current_time - last_update_player > settings.ANIMATION_PLAYER_COOLDOWN):              
+            if(idle_index == 0):
+                idle_index = 1
+            else:
+                idle_index = 0
+        DISPLAYSURFACE.blit(player_1.get_sprite_list()[idle_index],(position[0],position[1]))
 
         #get all events that are happening
         for event in pygame.event.get():
             #exit the game
-            if event.type == QUIT:
+            if (event.type == pygame.locals.QUIT):
                 pygame.quit()
                 sys.exit()
+            #a key is pressed
+            elif (pygame.key.get_pressed()):
+                keys = pygame.key.get_pressed()
+                position = player_1.get_position()
+                #move player right
+                if(keys[pygame.K_d]):
+                    #right x limit
+                    if(position[0] < settings.X_LIMIT_RIGHT):
+                        player_1.move(settings.SPEED, 0)                 
+                        DISPLAYSURFACE.blit(player_1.get_sprite_list()[idle_index],(position[0],position[1]))
+                #move player left
+                elif(keys[pygame.K_a]):
+                    #left x limit
+                    if(position[0] > settings.X_LIMIT_LEFT):
+                        player_1.move(-1*settings.SPEED,0)
+                        DISPLAYSURFACE.blit(player_1.get_sprite_list()[idle_index],(position[0],position[1]))
+
+
+        #update the varying timers if necessary
+        if(current_time - last_update_blink > settings.ANIMATION_BLINK_COOLDOWN):
+            last_update_blink =  current_time
+        
+        if(current_time - last_update_drop > settings.ANIMATION_DROP_COOLDOWN):
+            last_update_drop =  current_time
+
+        if(current_time - last_update_smash > settings.ANIMATION_SMASH_COOLDOWN):
+            last_update_smash =  current_time
+
+        if(current_time - last_update_player > settings.ANIMATION_PLAYER_COOLDOWN):
+            last_update_player =  current_time
+
+        #update the display
+        pygame.display.update()        
 
 if __name__ == "__main__":
     main()
