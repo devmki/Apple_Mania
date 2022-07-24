@@ -32,6 +32,9 @@ DROPPING_SOUND.set_volume(0.0)
 BURST_SOUND = pygame.mixer.Sound("Music_and_Sounds/retro_misc_01.ogg")
 BURST_SOUND.set_volume(0.1)
 
+CATCH_SOUND = pygame.mixer.Sound("Music_and_Sounds/power_up_02.ogg")
+CATCH_SOUND.set_volume(0.1)
+
 #create a display to show the game
 DISPLAYSURFACE = pygame.display.set_mode((settings.WIDTH,settings.HEIGHT))
 
@@ -43,7 +46,7 @@ GAME_NAME = "APPLE MANIA"
 pygame.display.set_caption(GAME_NAME)
 
 #text font
-FONT = pygame.font.Font('freesansbold.ttf', 32)
+FONT = pygame.font.Font('freesansbold.ttf', 16)
 
 #shake or inflate?
 SHAKE = False
@@ -51,15 +54,15 @@ SHAKE = False
 #sprite sheet for smashed apple
 smashed_image_sheet = pygame.image.load("2DArt/Smashed_apple_sprite_sheet.png").convert_alpha()
 
+#sprite sheet for barrel
+barrel_image_sheet = pygame.image.load("2DArt/Barrel.png").convert_alpha()
+
 #player class
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
         self.lives = 3
         self.image = pygame.image.load("2DArt/Player.png").convert_alpha()
-        self.rect = self.image.get_rect()
-        self.rect.center = (settings.PLAYER_START_X, settings.PLAYER_START_Y)
-
         self.player_sheet = sp_load.Sprite_Sheet_loader(self.image)
 
         self.idle_image_1 = self.player_sheet.get_image(0,32,32,4,settings.BLACK)
@@ -69,11 +72,17 @@ class Player(pygame.sprite.Sprite):
         self.catch_empty_image = self.player_sheet.get_image(4,32,32,4,settings.BLACK)
         self.catch_full_image = self.player_sheet.get_image(5,32,32,4,settings.BLACK)
 
+        self.rect = self.idle_image_1.get_rect()
+        self.rect.move_ip(settings.PLAYER_START_X, settings.PLAYER_START_Y)
+
+
         self.player_sprite_list = [self.idle_image_1, self.idle_image_2, 
                                    self.idle_full_image_1, self.idle_full_image_2,
                                    self.catch_empty_image, self.catch_full_image]
 
         self.bucket_full = False
+        self.radius = settings.RADIUS
+
 
     def get_sprite_list(self):
         return self.player_sprite_list
@@ -81,6 +90,9 @@ class Player(pygame.sprite.Sprite):
     def move(self,x,y):
         self.rect.move_ip(x,y)
     
+    def get_rect(self):
+        return self.rect
+
     def get_position(self):
         return self.rect.center
 
@@ -114,6 +126,7 @@ class Apple(pygame.sprite.Sprite):
 
         self.smashed_list = [self.smash_1, self.smash_2, self.smash_3, self.smash_4]
 
+        self.radius = settings.RADIUS
 
     def draw(self,surface):
         surface.blit(self.image,self.rect)        
@@ -132,6 +145,9 @@ class Apple(pygame.sprite.Sprite):
         self.rect_new = self.image_new.get_rect()
         self.rect_new.center = self.rect.center
         surface.blit(self.image_new,self.rect_new)
+    
+    def get_rect(self):
+        return self.rect
 
     def get_rect_yval(self):
         return self.rect.centery
@@ -142,7 +158,62 @@ class Apple(pygame.sprite.Sprite):
     def get_smashed_list(self):
         return self.smashed_list
 
+class Barrel(pygame.sprite.Sprite):
+    def __init__(self):
+        self.max_capacity = settings.BARREL_CAPACITY
+        self.current_amount = 0
+        self.apples_in_barrel = False
+        self.images = sp_load.Sprite_Sheet_loader(barrel_image_sheet)
+        self.rect = None
+        self.barrel_empty = self.images.get_image(0,32,32,3,settings.BLACK)
+        self.barrel_filled = self.images.get_image(1,32,32,3,settings.BLACK)
+        self.rect_empty = self.barrel_empty.get_rect()
+        self.rect_filled= self.barrel_filled.get_rect()
+        self.text = FONT.render('/'.join([str(self.current_amount),str(self.max_capacity)]),True,settings.WHITE)
+        self.text_rect = self.text.get_rect()
+        self.text_rect.topleft = (settings.BARREL_X + 40, settings.BARREL_Y + 40)
+        self.radius = settings.RADIUS/2
+        self.sprite_list = [self.barrel_empty, self.barrel_filled]
+
+        self.move()
+
+    def get_status(self):
+        return self.apples_in_barrel
+
+    def get_capacity(self):
+        return self.max_capacity
+
+    def move(self):
+        self.rect_empty.move_ip(settings.BARREL_X, settings.BARREL_Y)  
+        self.rect_filled.move_ip(settings.BARREL_X, settings.BARREL_Y)    
+
+    def get_current_amount(self):
+        return self.current_amount
+
+    def increment_amount(self):
+        #if(self.current_amount < self.max_capacity):
+            self.current_amount += 1
+            self.text = FONT.render('/'.join([str(self.current_amount),str(self.max_capacity)]),True,settings.WHITE)
+
+    def get_sprite_list(self):
+        return self.sprite_list
+
+    def get_rect(self,index):
+        if(index == 0):
+            self.rect = self.rect_empty
+        else:
+            self.rect = self.rect_filled
+        return self.rect
+
+    def get_text(self):
+        return self.text
+
+    def get_text_rect(self):
+        return self.text_rect
+        
+
 player_1 = Player()  
+barrel = Barrel()
 
 def main():
     #when was the last update of the grow and shrink animation
@@ -187,6 +258,7 @@ def main():
     #index to toggle which idle animation is used for the player
     idle_index = 0
     pygame.mixer.music.play(infinite, start)
+    barrel_index = 0
     #game loop
     while run:
         #limit to 60 FPS
@@ -196,6 +268,10 @@ def main():
 
         #background
         DISPLAYSURFACE.blit(BACKGROUND,(0,0))
+
+        #blit barrel
+        DISPLAYSURFACE.blit(barrel.get_sprite_list()[barrel_index],barrel.get_rect(barrel_index))
+        DISPLAYSURFACE.blit(barrel.get_text(),barrel.get_text_rect())
 
         #if less than 5 apples then add more applesS
         while len(apples_list) <= settings.MAX_APPLES-1:
@@ -276,10 +352,14 @@ def main():
                     #update the elevation of the apple
                     elevation = apples_list[index_of_apple].get_rect_yval()
                 apples_list[index_of_apple].draw(DISPLAYSURFACE)
+                if(settings.DRAW_RECTS):
+                    pygame.draw.rect(DISPLAYSURFACE,settings.WHITE,apples_list[index_of_apple].get_rect(),1)
             else:
                 #apple is hitting the ground, time for the smash animation
                 DISPLAYSURFACE.blit(apples_list[index_of_apple].get_smashed_list()[smash_index],
                     (xvalue-16, elevation-16))   
+                if(settings.DRAW_RECTS):    
+                    pygame.draw.rect(DISPLAYSURFACE,settings.WHITE,apples_list[index_of_apple].get_rect(),1)    
                 if(current_time - last_update_smash > settings.ANIMATION_SMASH_COOLDOWN):
                     time_smash += 1
                     if(time_smash == 1):
@@ -305,7 +385,7 @@ def main():
                     idle_index = 2
                 elif(idle_index == 2):
                     idle_index = 3
-        DISPLAYSURFACE.blit(player_1.get_sprite_list()[idle_index],(position[0],position[1]))
+        DISPLAYSURFACE.blit(player_1.get_sprite_list()[idle_index],player_1.get_rect())
 
         #get all events that are happening
         for event in pygame.event.get():
@@ -323,37 +403,50 @@ def main():
                     if(position[0] < settings.X_LIMIT_RIGHT):
                         player_1.move(settings.SPEED, 0)   
                         if(player_1.get_bucket_state()):
-                            idle_index = 2 
+                            if(idle_index != 3):
+                                idle_index = 2 
                         else:
-                            idle_index = 0             
-                        DISPLAYSURFACE.blit(player_1.get_sprite_list()[idle_index],(position[0],position[1]))
+                            if(idle_index != 1):
+                                idle_index = 0             
+                        DISPLAYSURFACE.blit(player_1.get_sprite_list()[idle_index],player_1.get_rect())
                 #move player left
                 elif(keys[pygame.K_a]):
                     #left x limit
                     if(position[0] > settings.X_LIMIT_LEFT):
                         player_1.move(-1*settings.SPEED,0)
                         if(player_1.get_bucket_state()):
-                            idle_index = 2 
+                            if(idle_index !=3):
+                                idle_index = 2 
                         else:
-                            idle_index = 0
-                        DISPLAYSURFACE.blit(player_1.get_sprite_list()[idle_index],(position[0],position[1]))
+                            if(idle_index != 1):
+                                idle_index = 0
+                        DISPLAYSURFACE.blit(player_1.get_sprite_list()[idle_index],player_1.get_rect())
                 #try to catch the apple
                 elif(keys[pygame.K_w]):
                     if(not player_1.get_bucket_state()):
+                        player_1.move(0,0)
                         colliding = pygame.sprite.collide_circle_ratio(settings.COLLISION_RATIO)(chosen_apple, player_1)
                         if(colliding):
                             player_1.set_bucket_full()
                             apples_list.pop(index_of_apple)
                             idle_index = 5
-                            DISPLAYSURFACE.blit(player_1.get_sprite_list()[idle_index],(position[0],position[1]))
+                            DISPLAYSURFACE.blit(player_1.get_sprite_list()[idle_index],player_1.get_rect())
+                            CATCH_SOUND.play()
                         else:
                             idle_index = 4
-                            DISPLAYSURFACE.blit(player_1.get_sprite_list()[idle_index],(position[0],position[1]))
+                            DISPLAYSURFACE.blit(player_1.get_sprite_list()[idle_index],player_1.get_rect())
                 #empty bucket
                 elif(keys[pygame.K_s]):
                     if(player_1.get_bucket_state()):
-                        player_1.set_bucket_empty()
+                        player_1.move(0,0)
+                        DISPLAYSURFACE.blit(player_1.get_sprite_list()[idle_index],player_1.get_rect())
+                        #check if emptied into barrel
+                        colliding = pygame.sprite.collide_rect_ratio(settings.COLLISION_BARREL_RATIO)(player_1,barrel)
                         idle_index = 0
+                        player_1.set_bucket_empty()
+                        if(colliding):            
+                            barrel.increment_amount()
+                            barrel_index = 1
 
 
         #update the varying timers if necessary
@@ -368,6 +461,12 @@ def main():
 
         if(current_time - last_update_player > settings.ANIMATION_PLAYER_COOLDOWN):
             last_update_player =  current_time
+
+
+        if(settings.DRAW_RECTS):
+            pygame.draw.rect(DISPLAYSURFACE,settings.WHITE,barrel.get_rect(barrel_index),1)
+            pygame.draw.rect(DISPLAYSURFACE,settings.WHITE,player_1.get_rect(),1)
+
 
         #update the display
         pygame.display.update()        

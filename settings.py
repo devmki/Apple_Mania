@@ -1,5 +1,8 @@
 #Variables for game settings
 
+#draw rects for collision
+DRAW_RECTS = True
+
 #of screen
 WIDTH = 300
 HEIGHT = 300
@@ -8,7 +11,11 @@ HEIGHT = 300
 FPS = 60
 
 #collision ratio
-COLLISION_RATIO = 0.45
+COLLISION_RATIO = 0.7
+COLLISION_BARREL_RATIO = 0.7
+
+#radius for collision
+RADIUS = 64
 
 #colors
 WHITE = (255, 255, 255)
@@ -47,8 +54,15 @@ PLAYER_START_X = 40
 PLAYER_START_Y = 180
 
 #player movement speed
-SPEED = 5
+SPEED = 7
 
 #x boundary
-X_LIMIT_LEFT = -25
-X_LIMIT_RIGHT = 215
+X_LIMIT_LEFT = 25
+X_LIMIT_RIGHT = 280
+
+#barrel capacity
+BARREL_CAPACITY = 5
+
+#barrel position
+BARREL_X = -10
+BARREL_Y = 215
