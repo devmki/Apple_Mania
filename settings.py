@@ -1,3 +1,7 @@
+import pygame
+
+pygame.init()
+
 #Variables for game settings
 
 #draw rects for collision
@@ -9,6 +13,9 @@ HEIGHT = 300
 
 #frames per second
 FPS = 60
+
+#text font
+FONT = pygame.font.Font('freesansbold.ttf', 16)
 
 #collision ratio
 COLLISION_RATIO = 0.7
