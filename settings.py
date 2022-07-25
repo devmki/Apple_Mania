@@ -73,3 +73,7 @@ BARREL_CAPACITY = 5
 #barrel position
 BARREL_X = -10
 BARREL_Y = 215
+
+#hearts positions
+HEARTS_X = [200,230,260]
+HEARTS_Y = 270

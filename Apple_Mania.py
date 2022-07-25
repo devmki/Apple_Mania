@@ -211,6 +211,7 @@ def main():
                             smash_index += 1
                     else:    
                         apples_list.pop(index_of_apple)
+                        player_1.set_lives(-1)
                         time_smash = 0
 
 
@@ -227,7 +228,9 @@ def main():
                     idle_index = 2
                 elif(idle_index == 2):
                     idle_index = 3
+        player_1.draw_hearts(DISPLAYSURFACE)
         DISPLAYSURFACE.blit(player_1.get_sprite_list()[idle_index],player_1.get_rect())
+        
 
         #get all events that are happening
         for event in pygame.event.get():
