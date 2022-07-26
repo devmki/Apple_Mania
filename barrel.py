@@ -38,11 +38,14 @@ class Barrel(pygame.sprite.Sprite):
     def get_current_amount(self):
         return self.current_amount
 
-    def increment_amount(self):
-        #if(self.current_amount < self.max_capacity):
-            self.current_amount += 1
+    def increment_amount(self,modifier):
+            self.current_amount += modifier
             self.text = settings.FONT.render('/'.join([str(self.current_amount),str(self.max_capacity)]),True,settings.WHITE)
 
+    def set_amount(self,amount):
+        self.current_amount = amount
+        self.text = settings.FONT.render('/'.join([str(self.current_amount),str(self.max_capacity)]),True,settings.WHITE)
+    
     def get_sprite_list(self):
         return self.sprite_list
 

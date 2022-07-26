@@ -15,8 +15,11 @@ class Hearts(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.move_ip(settings.HEARTS_X[id],settings.HEARTS_Y)
 
-    def update_heart(self):
-        self.image = self.broken_heart_image
+    def update_heart(self,mode):
+        if(mode == 1):
+            self.image = self.broken_heart_image
+        elif(mode == 2):
+            self.image = self.healthy_heart_image
     
     def get_rect(self):
         return self.rect

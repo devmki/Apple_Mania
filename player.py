@@ -58,7 +58,12 @@ class Player(pygame.sprite.Sprite):
 
     def set_lives(self,modifier):
         self.lives += modifier
-        self.hearts_list[self.lives].update_heart()
+        self.hearts_list[self.lives].update_heart(1)
+
+    def reset_lives(self):
+        for i in range(len(self.hearts_list)):
+            self.hearts_list[i].update_heart(2)
+        self.lives = 3
         
     def get_lives(self):
         return self.lives
