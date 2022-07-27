@@ -27,6 +27,8 @@ RADIUS = 64
 #colors
 WHITE = (255, 255, 255)
 BLACK = (0,0,0)
+RED = (255,0,0)
+LIGHTRED = (255,80,80)
 
 #max apples in trees
 MAX_APPLES = 5

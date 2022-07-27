@@ -40,6 +40,9 @@ BURST_SOUND.set_volume(0.1)
 CATCH_SOUND = pygame.mixer.Sound("Music_and_Sounds/power_up_02.ogg")
 CATCH_SOUND.set_volume(0.1)
 
+MENU_SOUND = pygame.mixer.Sound("Music_and_Sounds/retro_misc_04.ogg")
+MENU_SOUND.set_volume(0.1)
+
 #create a display to show the game
 DISPLAYSURFACE = pygame.display.set_mode((settings.WIDTH,settings.HEIGHT))
 
@@ -57,7 +60,7 @@ SHAKE = False
 player_1 = Player(DISPLAYSURFACE)  
 barrel = Barrel(DISPLAYSURFACE)
 
-def main():
+def game_loop():
     #when was the last update of the grow and shrink animation
     last_update_blink = pygame.time.get_ticks()
     #when was the last update of the drop animation
@@ -89,18 +92,12 @@ def main():
     time_smash = 0
     #used to determine when to play sound of rustling leaves
     sound_shake_or_grow = 0
-    #used to set play backround music infinitly
-    infinite = -1
-    #when to start music
-    start = 0.0
     #index to toggle which grow and shrink animation is used
     grow_index = 0
     #index to toggle which smash animation is used
     smash_index = 0
     #index to toggle which idle animation is used for the player
     idle_index = 0
-    #play music
-    pygame.mixer.music.play(infinite, start)
     #index to toggle which barrel image is used
     barrel_index = 0
     #triggered when player has no more lives
@@ -326,9 +323,9 @@ def main():
 
         else:
             if(game_over == 1):
-                DISPLAYSURFACE.blit(settings.FONT.render("YOU WIN!",True,settings.WHITE),(125,150))                
+                DISPLAYSURFACE.blit(settings.FONT.render("YOU WIN!",True,settings.WHITE),(120,150))                
             elif(game_over == 2):
-                DISPLAYSURFACE.blit(settings.FONT.render("GAME OVER!",True,settings.WHITE),(125,150))
+                DISPLAYSURFACE.blit(settings.FONT.render("GAME OVER!",True,settings.WHITE),(110,150))
             
             for event in pygame.event.get():
                 if(event.type == pygame.locals.QUIT):
@@ -342,9 +339,89 @@ def main():
                         game_over = 0
                         player_1.reset_lives()
                         barrel.set_amount(0)
+                    if(keys[pygame.K_SPACE]):
+                        game_over = 0
+                        player_1.reset_lives()
+                        barrel.set_amount(0)
+                        run = False
        
         #update the display
         pygame.display.update()
+
+
+def main():
+    #used to set play backround music infinitly
+    infinite = -1
+    #when to start music
+    start = 0.0
+    #play music
+    pygame.mixer.music.play(infinite, start)
+
+    button_start_game = pygame.rect.Rect(100,125,100,25)
+    button_start_text = settings.FONT.render('START',True,settings.WHITE)
+    button_start_color = settings.RED
+    button_tutorial = pygame.rect.Rect(100,175,100,25)
+    button_tutorial_text = settings.FONT.render('TUTORIAL',True,settings.WHITE)
+    button_tutorial_color = settings.RED 
+    button_quit = pygame.rect.Rect(100,225,100,25)
+    button_quit_text = settings.FONT.render('QUIT',True,settings.WHITE)
+    button_quit_color = settings.RED
+
+    run = True
+    played_menu_sound = [False,False,False]
+    while run:
+
+        point = pygame.mouse.get_pos()
+        if(button_start_game.collidepoint(point)):
+            button_start_color = settings.LIGHTRED
+            if(not played_menu_sound[0]):
+                MENU_SOUND.play()
+                played_menu_sound[0] = True
+        elif(not button_start_game.collidepoint(point)):
+            button_start_color = settings.RED
+            played_menu_sound[0] = False
+        if(button_tutorial.collidepoint(point)):
+            button_tutorial_color = settings.LIGHTRED
+            if(not played_menu_sound[1]):
+                MENU_SOUND.play()
+                played_menu_sound[1] = True
+        elif(not button_tutorial.collidepoint(point)):
+            button_tutorial_color = settings.RED
+            played_menu_sound[1] = False
+        if(button_quit.collidepoint(point)):
+            button_quit_color = settings.LIGHTRED
+            if(not played_menu_sound[2]):
+                MENU_SOUND.play()
+                played_menu_sound[2] = True    
+        elif(not button_quit.collidepoint(point)):
+            button_quit_color = settings.RED   
+            played_menu_sound[2] = False   
+
+        #background
+        DISPLAYSURFACE.blit(BACKGROUND,(0,0))
+        pygame.draw.rect(DISPLAYSURFACE,button_start_color,button_start_game)
+        DISPLAYSURFACE.blit(button_start_text,(125,130))
+        pygame.draw.rect(DISPLAYSURFACE,button_tutorial_color,button_tutorial)
+        DISPLAYSURFACE.blit(button_tutorial_text,(110,180))
+        pygame.draw.rect(DISPLAYSURFACE,button_quit_color,button_quit)
+        DISPLAYSURFACE.blit(button_quit_text,(130,230))
+
+        for event in pygame.event.get():
+                #exit the game
+                if (event.type == pygame.locals.QUIT):
+                    pygame.quit()
+                    sys.exit()             
+                if(event.type == pygame.locals.MOUSEBUTTONDOWN):
+                    if(button_quit.collidepoint(point)):
+                        pygame.quit()
+                        sys.exit()
+                    if(button_start_game.collidepoint(point)):
+                        game_loop() 
+                     
+
+        #update the screen
+        pygame.display.update()
+
 
 if __name__ == "__main__":
     main()
