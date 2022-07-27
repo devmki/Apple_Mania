@@ -33,6 +33,9 @@ LEAVES_SOUND.set_volume(2.0)
 
 DROPPING_SOUND = pygame.mixer.Sound("Music_and_Sounds/synth_beep_02.ogg")
 DROPPING_SOUND.set_volume(0.0)
+#channel of the dropping sound
+#used to determine when to play the sound gain
+channel = DROPPING_SOUND.play()
 
 BURST_SOUND = pygame.mixer.Sound("Music_and_Sounds/retro_misc_01.ogg")
 BURST_SOUND.set_volume(0.1)
@@ -69,9 +72,6 @@ def game_loop():
     last_update_smash = pygame.time.get_ticks()
     #when was the last update of the player animation
     last_update_player = pygame.time.get_ticks()
-    #channel of the dropping sound
-    #used to determine when to play the sound gain
-    channel = DROPPING_SOUND.play()
     #keep time and set to fps
     clock = pygame.time.Clock()
     #continue running the game?
@@ -350,6 +350,17 @@ def game_loop():
 
 
 def main():
+    #keep time and set to fps
+    clock = pygame.time.Clock()
+
+    #title text
+    title_text = settings.FONT.render('APPLE MANIA!!!',True,settings.RED)
+    title_scale = 2
+    scale_direction = 1
+    original_width = title_text.get_width()
+    original_height = title_text.get_height()
+    last_title_update = pygame.time.get_ticks()
+
     #used to set play backround music infinitly
     infinite = -1
     #when to start music
@@ -370,6 +381,10 @@ def main():
     run = True
     played_menu_sound = [False,False,False]
     while run:
+        #limit to 60 FPS
+        clock.tick(settings.FPS)
+
+        current_time = pygame.time.get_ticks()
 
         point = pygame.mouse.get_pos()
         if(button_start_game.collidepoint(point)):
@@ -399,6 +414,21 @@ def main():
 
         #background
         DISPLAYSURFACE.blit(BACKGROUND,(0,0))
+        #title
+        DISPLAYSURFACE.blit(title_text,(settings.WIDTH/2 - title_text.get_width()/2,50))
+        if(current_time - last_title_update > settings.ANIMATION_TITLE_COOLDOWN):
+            if(scale_direction == 1):
+                title_text = pygame.transform.scale(title_text, (title_text.get_width() * title_scale, title_text.get_height() * title_scale))
+            elif(scale_direction == -1):
+                title_text = pygame.transform.scale(title_text, (original_width, original_height))
+            last_title_update = current_time
+            if(scale_direction == 1):
+                scale_direction = -1
+            else:
+                scale_direction = 1
+
+
+        #buttons
         pygame.draw.rect(DISPLAYSURFACE,button_start_color,button_start_game)
         DISPLAYSURFACE.blit(button_start_text,(125,130))
         pygame.draw.rect(DISPLAYSURFACE,button_tutorial_color,button_tutorial)
@@ -416,6 +446,7 @@ def main():
                         pygame.quit()
                         sys.exit()
                     if(button_start_game.collidepoint(point)):
+                        DROPPING_SOUND.stop()
                         game_loop() 
                      
 
