@@ -17,8 +17,8 @@ class Player(pygame.sprite.Sprite):
         self.idle_image_2 = self.player_sheet.get_image(1,32,32,4,settings.BLACK)
         self.idle_full_image_1 = self.player_sheet.get_image(2,32,32,4,settings.BLACK)
         self.idle_full_image_2 = self.player_sheet.get_image(3,32,32,4,settings.BLACK)
-        self.catch_empty_image = self.player_sheet.get_image(4,32,32,4,settings.BLACK)
-        self.catch_full_image = self.player_sheet.get_image(5,32,32,4,settings.BLACK)
+        self.catch_empty_image = self.player_sheet.get_image(6,32,32,4,settings.BLACK)
+        self.catch_full_image = self.player_sheet.get_image(7,32,32,4,settings.BLACK)
 
         self.rect = self.idle_image_1.get_rect()
         self.rect.move_ip(settings.PLAYER_START_X, settings.PLAYER_START_Y)
@@ -47,8 +47,22 @@ class Player(pygame.sprite.Sprite):
     def get_position(self):
         return self.rect.center
 
-    def set_bucket_full(self):
+    def set_bucket_full(self, apple_type):
         self.bucket_full = True
+        if(apple_type == "golden"):
+            self.idle_full_image_1 = self.player_sheet.get_image(4,32,32,4,settings.BLACK)
+            self.player_sprite_list[2] = self.idle_full_image_1
+            self.idle_full_image_2 = self.player_sheet.get_image(5,32,32,4,settings.BLACK)
+            self.player_sprite_list[3] = self.idle_full_image_2
+            self.catch_full_image = self.player_sheet.get_image(8,32,32,4,settings.BLACK)
+            self.player_sprite_list[5] = self.catch_full_image
+        else:
+            self.idle_full_image_1 = self.player_sheet.get_image(2,32,32,4,settings.BLACK)
+            self.player_sprite_list[2] = self.idle_full_image_1
+            self.idle_full_image_2 = self.player_sheet.get_image(3,32,32,4,settings.BLACK)
+            self.player_sprite_list[3] = self.idle_full_image_2
+            self.catch_full_image = self.player_sheet.get_image(7,32,32,4,settings.BLACK)
+            self.player_sprite_list[5] = self.catch_full_image
     
     def set_bucket_empty(self):
         self.bucket_full = False

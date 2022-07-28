@@ -9,7 +9,22 @@ pygame.init()
 class Apple(pygame.sprite.Sprite):
     def __init__(self, surface, id):
         super().__init__()
-        self.image = pygame.image.load("2DArt/Apple.png")
+        self.apple_type = "standard"
+        #random number between 0 and 100
+        self.random_int = random.randint(0,settings.MAX_Y)
+        if(self.random_int < 10):
+            self.apple_type = "golden"
+        
+        #apple image
+        self.image = None
+        #sprite sheet for smashed apple
+        self.smashed_image_sheet = None
+        if(self.apple_type == "golden"):
+            self.image = pygame.image.load("2DArt/Apple_golden.png")
+            self.smashed_image_sheet = pygame.image.load("2DArt/Smashed_apple_golden_sprite_sheet.png").convert_alpha()
+        else:
+            self.image = pygame.image.load("2DArt/Apple.png")
+            self.smashed_image_sheet = pygame.image.load("2DArt/Smashed_apple_sprite_sheet.png").convert_alpha()
         self.rect = self.image.get_rect()
         self.rect.center = (random.randint(settings.MIN_X,settings.MAX_X),
                             random.randint(settings.MIN_Y,settings.MAX_Y))
@@ -18,8 +33,8 @@ class Apple(pygame.sprite.Sprite):
         self.text = settings.FONT.render(str(self.number),True,settings.WHITE)
         self.rect_new = None
         self.image_new = None
-        #sprite sheet for smashed apple
-        self.smashed_image_sheet = pygame.image.load("2DArt/Smashed_apple_sprite_sheet.png").convert_alpha()
+        
+        
 
         self.smashed_sheet = sp_load.Sprite_Sheet_loader(self.smashed_image_sheet)
 
@@ -31,6 +46,9 @@ class Apple(pygame.sprite.Sprite):
         self.smashed_list = [self.smash_1, self.smash_2, self.smash_3, self.smash_4]
 
         self.radius = settings.RADIUS
+
+
+
 
     def draw(self,surface):
         surface.blit(self.image,self.rect)        
@@ -61,6 +79,9 @@ class Apple(pygame.sprite.Sprite):
 
     def get_smashed_list(self):
         return self.smashed_list
+
+    def get_type(self):
+        return self.apple_type
 
 
         

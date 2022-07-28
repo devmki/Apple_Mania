@@ -274,7 +274,7 @@ def game_loop():
                             player_1.move(0,0)
                             colliding = pygame.sprite.collide_circle_ratio(settings.COLLISION_RATIO)(chosen_apple, player_1)
                             if(colliding):
-                                player_1.set_bucket_full()
+                                player_1.set_bucket_full(apples_list[index_of_apple].get_type())
                                 apples_list.pop(index_of_apple)
                                 idle_index = 5
                                 DISPLAYSURFACE.blit(player_1.get_sprite_list()[idle_index],player_1.get_rect())
