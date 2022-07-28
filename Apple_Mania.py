@@ -349,6 +349,52 @@ def game_loop():
         pygame.display.update()
 
 
+def tutorial():
+    #keep time and set to fps
+    clock = pygame.time.Clock()
+    last_update = pygame.time.get_ticks()
+
+    image_1 = pygame.image.load("2DArt/Tutorial_movement.png")
+    image_2 = pygame.image.load("2DArt/Tutorial_catch.jpg")
+    image_3 = pygame.image.load("2DArt/Tutorial_barrel.png")
+    image_4 = pygame.image.load("2DArt/Tutorial_lives.png")
+
+    image_list = [image_1,image_2,image_3,image_4]
+
+    image_index = 0
+
+    run = True
+    while run:
+
+        #limit to 60 FPS
+        clock.tick(settings.FPS)
+
+        current_time = pygame.time.get_ticks()
+
+        DISPLAYSURFACE.blit(image_list[image_index],(10,10))
+        if(current_time - last_update > settings.ANIMATION_TUTORIAL_COOLDOWN):
+            if(image_index < len(image_list)-1):
+                image_index += 1
+            else:
+                image_index = 0
+            last_update = current_time
+
+        for event in pygame.event.get():
+                #exit the game
+                if (event.type == pygame.locals.QUIT):
+                    pygame.quit()
+                    sys.exit()
+                #key pressed
+                elif (pygame.key.get_pressed()):
+                    keys = pygame.key.get_pressed()
+                    #exit tutorial
+                    if(keys[pygame.K_ESCAPE]):
+                        run = False                    
+
+
+        pygame.display.update()
+
+
 def main():
     #keep time and set to fps
     clock = pygame.time.Clock()
@@ -448,6 +494,8 @@ def main():
                     if(button_start_game.collidepoint(point)):
                         DROPPING_SOUND.stop()
                         game_loop() 
+                    if(button_tutorial.collidepoint(point)):
+                        tutorial()
                      
 
         #update the screen
