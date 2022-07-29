@@ -45,10 +45,9 @@ class Apple(pygame.sprite.Sprite):
 
         self.smashed_list = [self.smash_1, self.smash_2, self.smash_3, self.smash_4]
 
+        self.smashed = False
+
         self.radius = settings.RADIUS
-
-
-
 
     def draw(self,surface):
         surface.blit(self.image,self.rect)        
@@ -82,6 +81,12 @@ class Apple(pygame.sprite.Sprite):
 
     def get_type(self):
         return self.apple_type
+
+    def set_smashed(self, state):
+        self.smashed = state
+
+    def get_smashed_state(self):
+        return self.smashed
 
 
         

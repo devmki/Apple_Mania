@@ -31,6 +31,8 @@ class Player(pygame.sprite.Sprite):
         self.bucket_full = False
         self.radius = settings.RADIUS
 
+        self.carried_apple_type = None
+
         self.hearts_list = []
         for i in range(self.lives):
             self.hearts_list.append(Hearts(i))
@@ -56,6 +58,7 @@ class Player(pygame.sprite.Sprite):
             self.player_sprite_list[3] = self.idle_full_image_2
             self.catch_full_image = self.player_sheet.get_image(8,32,32,4,settings.BLACK)
             self.player_sprite_list[5] = self.catch_full_image
+            self.carried_apple_type = apple_type
         else:
             self.idle_full_image_1 = self.player_sheet.get_image(2,32,32,4,settings.BLACK)
             self.player_sprite_list[2] = self.idle_full_image_1
@@ -63,6 +66,7 @@ class Player(pygame.sprite.Sprite):
             self.player_sprite_list[3] = self.idle_full_image_2
             self.catch_full_image = self.player_sheet.get_image(7,32,32,4,settings.BLACK)
             self.player_sprite_list[5] = self.catch_full_image
+            self.carried_apple_type = apple_type
     
     def set_bucket_empty(self):
         self.bucket_full = False
@@ -85,3 +89,6 @@ class Player(pygame.sprite.Sprite):
     def draw_hearts(self,surface):
         for i in range(self.lives_start):
             surface.blit(self.hearts_list[i].get_image(),self.hearts_list[i].get_rect())
+
+    def get_apple_type(self):
+        return self.carried_apple_type

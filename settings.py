@@ -60,6 +60,9 @@ BLINKS = 12
 #maximum y value of dropping apple
 MAX_Y_DROP = 250
 
+#drop speed
+DROP_SPEED = 10
+
 #player start coordinates
 PLAYER_START_X = 40
 PLAYER_START_Y = 180
@@ -81,3 +84,8 @@ BARREL_Y = 215
 #hearts positions
 HEARTS_X = [200,230,260]
 HEARTS_Y = 270
+
+#score points based on apple type
+POINTS_GOLDEN = 10
+POINTS_NORMAL = 5
+

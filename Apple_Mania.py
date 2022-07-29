@@ -102,6 +102,8 @@ def game_loop():
     barrel_index = 0
     #triggered when player has no more lives
     game_over = 0 #0 run game, #1 player won, #2 player lost
+    #score
+    score = 0
     #game loop
     while run:
         #limit to 60 FPS
@@ -192,7 +194,7 @@ def game_loop():
                             DROPPING_SOUND.set_volume(0.1)
                             DROPPING_SOUND.play()
                         #drop the apple by specified amount
-                        apples_list[index_of_apple].move(0,settings.DIFF_MARGIN)
+                        apples_list[index_of_apple].move(0,settings.DROP_SPEED)
                         #update the elevation of the apple
                         elevation = apples_list[index_of_apple].get_rect_yval()
                     apples_list[index_of_apple].draw(DISPLAYSURFACE)
@@ -206,14 +208,19 @@ def game_loop():
                         pygame.draw.rect(DISPLAYSURFACE,settings.WHITE,apples_list[index_of_apple].get_rect(),1)    
                     if(current_time - last_update_smash > settings.ANIMATION_SMASH_COOLDOWN):
                         time_smash += 1
+                        apples_list[index_of_apple].set_smashed(True)
                         if(time_smash == 1):
                             BURST_SOUND.play()
                         if(smash_index < len(apples_list[index_of_apple].get_smashed_list())-1):
                             if(time_smash % 3 == 0):
                                 smash_index += 1
-                        else:    
-                            apples_list.pop(index_of_apple)
-                            player_1.set_lives(-1)
+                        else: 
+                            if(apples_list[index_of_apple].get_type() == "golden"):
+                                player_1.set_lives(-1)
+                                player_1.set_lives(-1)
+                            else:
+                                player_1.set_lives(-1)   
+                            apples_list.pop(index_of_apple)                            
                             time_smash = 0
 
 
@@ -273,7 +280,7 @@ def game_loop():
                         if(not player_1.get_bucket_state()):
                             player_1.move(0,0)
                             colliding = pygame.sprite.collide_circle_ratio(settings.COLLISION_RATIO)(chosen_apple, player_1)
-                            if(colliding):
+                            if(colliding and not apples_list[index_of_apple].get_smashed_state()):
                                 player_1.set_bucket_full(apples_list[index_of_apple].get_type())
                                 apples_list.pop(index_of_apple)
                                 idle_index = 5
@@ -294,6 +301,10 @@ def game_loop():
                             if(colliding):            
                                 barrel.increment_amount(1)
                                 barrel_index = 1
+                                if(player_1.get_apple_type() == "golden"):
+                                    score += settings.POINTS_GOLDEN
+                                else:
+                                    score += settings.POINTS_NORMAL
 
 
             #update the varying timers if necessary
@@ -323,7 +334,8 @@ def game_loop():
 
         else:
             if(game_over == 1):
-                DISPLAYSURFACE.blit(settings.FONT.render("YOU WIN!",True,settings.WHITE),(120,150))                
+                DISPLAYSURFACE.blit(settings.FONT.render("YOU WIN!",True,settings.WHITE),(120,150))  
+                DISPLAYSURFACE.blit(settings.FONT.render(f"Final score: {score}",True,settings.WHITE),(105,185))            
             elif(game_over == 2):
                 DISPLAYSURFACE.blit(settings.FONT.render("GAME OVER!",True,settings.WHITE),(110,150))
             
@@ -337,8 +349,12 @@ def game_loop():
                     #restart the game
                     if(keys[pygame.K_1]):
                         game_over = 0
+                        score = 0  
                         player_1.reset_lives()
+                        player_1.set_bucket_empty()
                         barrel.set_amount(0)
+                        apples_list = []
+                        apple_group = None
                     if(keys[pygame.K_SPACE]):
                         game_over = 0
                         player_1.reset_lives()
