@@ -1,7 +1,4 @@
 #import librarys
-from copyreg import dispatch_table
-from distutils.errors import DistutilsOptionError
-from doctest import ELLIPSIS_MARKER
 import pygame
 import pygame.locals
 import sys
